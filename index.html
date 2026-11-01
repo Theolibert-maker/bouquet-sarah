@@ -86,6 +86,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .pin{width:18px;height:18px;border-radius:50%;background:#f06b8a;box-shadow:0 0 0 4px rgba(240,107,138,.35),0 0 24px 6px rgba(240,107,138,.6);animation:pin 2s ease-out infinite}
 @keyframes pin{0%{box-shadow:0 0 0 0 rgba(240,107,138,.6),0 0 24px 6px rgba(240,107,138,.6)}100%{box-shadow:0 0 0 22px rgba(240,107,138,0),0 0 24px 6px rgba(240,107,138,.6)}}
 .leaflet-container{background:#040404;font-family:var(--mono)}
+.leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.82) contrast(.92) saturate(.45)}
 .leaflet-control-attribution{background:rgba(4,4,4,.55)!important;color:#6d685c!important;font-size:8px!important}
 .leaflet-control-attribution a{color:#8a8578!important}
 @media (prefers-reduced-motion: reduce){.mem,.pola,.memtop{transition:none}.pin{animation:none}}
@@ -632,8 +633,8 @@ resize();
   function ensureMap() {
     if (map) return;
     map = L.map('map', { zoomControl: false, attributionControl: true, zoomSnap: 0.25 }).setView([49.4, 11], 4.25);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19, subdomains: 'abcd', attribution: '&copy; OpenStreetMap &copy; CARTO'
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; OpenStreetMap'
     }).addTo(map);
   }
   // put the pin in the clear space above the polaroid
