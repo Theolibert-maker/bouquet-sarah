@@ -632,7 +632,7 @@ resize();
     return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b.slice(0, 12) }, await keyP, b.slice(12));
   };
   let meta = null, imgs = {};
-  const metaP = dec('m/meta.bin').then(b => (meta = JSON.parse(new TextDecoder().decode(b)))).catch(() => null);
+  const metaP = dec('m/order-v3.bin').then(b => (meta = JSON.parse(new TextDecoder().decode(b)))).catch(() => null);
   const photo = async n => imgs[n] || (imgs[n] = URL.createObjectURL(new Blob([await dec(`m/${n}.bin`)], { type: 'image/jpeg' })));
 
   const mem = document.getElementById('mem'), top = document.getElementById('memtop'), pola = document.getElementById('pola');
