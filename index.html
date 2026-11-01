@@ -584,7 +584,7 @@ if (ISBDAY) {
   document.title = 'Joyeux anniversaire Sarah ♥';
 } else if (DAYS > 0 && DAYS <= 10) {
   bdayEl.innerHTML = NOVDAY === 1 ? `Bon mois d'anniversaire ${E('🎂✨')}` : DAYS === 1 ? `C'est demain ${E('🎂')}` : `Plus que ${DAYS} jours ${E('🎂')}`;
-  smEl.innerHTML = (NOVDAY === 1 ? `Novembre commence, ton mois commence…<br>` : DAYS === 1 ? `Demain, c'est ton anniversaire…<br>` : `avant ton anniversaire. Demain, un autre bouquet t'attend ${E('🌷')}<br>`) + NOFADE;
+  smEl.innerHTML = (NOVDAY === 1 ? `Novembre commence, ton mois commence…<br>` : DAYS === 1 ? `Demain, c'est ton anniversaire…<br>` : `avant ton anniversaire ${E('🌷')}<br>`) + NOFADE;
   countEl.innerHTML = `<b>J-${DAYS}</b> ton bouquet du jour`;
 } else {
   bdayEl.innerHTML = `Pour toi ${E('♥')}`;
@@ -671,12 +671,12 @@ resize();
     if (st.ISBDAY) {
       // birthday: a little tour of every memory
       let k = 0;
-      const tour = () => { show(order[k % order.length], `Nos souvenirs · ${k % order.length + 1}/${order.length}<span>Joyeux anniversaire ♥</span>`, k ? 2.6 : 4.2); k++; later(tour, k === 1 ? 8000 : 6000); };
+      const tour = () => { show(order[k % order.length], `Toi & moi · ${k % order.length + 1}/${order.length}<span>Joyeux anniversaire ♥</span>`, k ? 2.6 : 4.2); k++; later(tour, k === 1 ? 8000 : 6000); };
       later(tour, 1200);
     } else {
       const d = st.NOVDAY >= 1 && st.NOVDAY <= order.length ? st.NOVDAY : (st.dayKey % order.length) + 1;
-      const tail = st.NOVDAY >= 1 && st.NOVDAY < order.length ? 'Demain, un autre souvenir t’attend' : 'Un souvenir de nous';
-      later(() => show(order[d - 1], `Souvenir du jour · ${d}/${order.length}<span>${tail}</span>`, 4.5), 1200);
+      const tail = st.NOVDAY >= 1 && st.NOVDAY < order.length ? 'Demain, une autre surprise t’attend' : 'Toi & moi';
+      later(() => show(order[d - 1], `Jour ${d} sur ${order.length}<span>${tail}</span>`, 4.5), 1200);
     }
   }
   function reset() {
