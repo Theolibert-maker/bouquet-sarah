@@ -80,7 +80,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mem{position:fixed;inset:0;z-index:5;opacity:0;transition:opacity 1.8s ease;background:var(--bg)}
 .mem.on{opacity:1}
 #map{position:absolute;inset:0;background:#040404}
-.vig{position:absolute;inset:0;pointer-events:none;z-index:401;background:radial-gradient(ellipse at 50% 32%,rgba(4,4,4,0) 30%,rgba(4,4,4,.88) 100%)}
+.vig{position:absolute;inset:0;pointer-events:none;z-index:401;background:linear-gradient(180deg,rgba(4,4,4,.92) 0,rgba(4,4,4,.7) 150px,rgba(4,4,4,0) 230px),radial-gradient(ellipse at 50% 32%,rgba(4,4,4,0) 30%,rgba(4,4,4,.88) 100%)}
 .memtop{position:absolute;z-index:402;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 24px);text-align:center;pointer-events:none;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   font:700 10px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:#f6a3b6;opacity:0;transition:opacity 1.2s}
@@ -99,7 +99,19 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.82) contrast(.92) saturate(.45)}
 .leaflet-control-attribution{background:rgba(4,4,4,.55)!important;color:#6d685c!important;font-size:8px!important}
 .leaflet-control-attribution a{color:#8a8578!important}
-@media (prefers-reduced-motion: reduce){.mem,.pola,.memtop{transition:none}.pin{animation:none}}
+.pola{cursor:zoom-in}
+.past{width:9px;height:9px;border-radius:50%;background:#f6d6de;opacity:.75;box-shadow:0 0 10px rgba(246,214,222,.6)}
+.tiny{position:absolute;z-index:403;left:max(16px,env(safe-area-inset-left,0px));right:140px;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);text-align:left;pointer-events:none;
+  font:700 9px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:#8d8577;opacity:0;transition:opacity 1.2s}
+.tiny.on{opacity:1}
+.lb{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:rgba(4,4,4,.94);opacity:0;pointer-events:none;transition:opacity .45s;
+  padding:calc(env(safe-area-inset-top,0px) + 24px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 24px) max(16px,env(safe-area-inset-left,0px))}
+.lb.on{opacity:1;pointer-events:auto;cursor:zoom-out}
+.lb img{max-width:100%;max-height:100%;border-radius:4px;box-shadow:0 30px 80px rgba(0,0,0,.7);transform:scale(.94);transition:transform .45s cubic-bezier(.2,.9,.25,1.1)}
+.lb.on img{transform:none}
+.fh{position:fixed;z-index:15;pointer-events:none;font-size:26px;color:#f06b8a;text-shadow:0 0 14px rgba(240,107,138,.6);animation:fh 1.6s ease-out forwards}
+@keyframes fh{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}20%{opacity:1;transform:translate(-50%,-60%) scale(1.15)}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),-260%) scale(.9)}}
+@media (prefers-reduced-motion: reduce){.mem,.pola,.memtop,.tiny,.lb,.lb img{transition:none}.pin{animation:none}.fh{animation-duration:.01s}}
 </style>
 <style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0}</style>
 </head>
@@ -112,8 +124,10 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   <div id="map" aria-label="Carte du souvenir du jour"></div>
   <div class="vig"></div>
   <div class="memtop" id="memtop"></div>
+  <div class="tiny" id="tiny">touche la photo pour l’agrandir</div>
   <figure class="pola" id="pola"><img id="polaimg" alt="Souvenir de nous deux"><figcaption id="polacap"></figcaption></figure>
 </div>
+<div class="lb" id="lb"><img id="lbimg" alt="Photo agrandie"></div>
 <button id="regrow" type="button">↻ Revoir</button>
 <div class="intro" id="intro">
   <div>
@@ -638,7 +652,30 @@ resize();
   const mem = document.getElementById('mem'), top = document.getElementById('memtop'), pola = document.getElementById('pola');
   const pimg = document.getElementById('polaimg'), pcap = document.getElementById('polacap');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let map, marker, started = false, timers = [];
+  let map, marker, started = false, timers = [], trail = null;
+  const lb = document.getElementById('lb'), lbimg = document.getElementById('lbimg'), tiny = document.getElementById('tiny');
+  pola.addEventListener('click', e => { e.stopPropagation(); if (!pimg.src) return; lbimg.src = pimg.src; lb.classList.add('on'); tiny.classList.remove('on'); });
+  lb.addEventListener('click', () => lb.classList.remove('on'));
+  mem.addEventListener('pointerdown', e => {
+    if (e.target.closest('.pola')) return;
+    for (let k = 0; k < 3; k++) {
+      const h = document.createElement('span'); h.className = 'fh'; h.textContent = '♥';
+      h.style.left = e.clientX + 'px'; h.style.top = e.clientY + 'px';
+      h.style.setProperty('--dx', ((Math.random() - .5) * 90) + 'px'); h.style.animationDelay = (k * .12) + 's';
+      h.style.color = ['#f06b8a', '#f6a3b6', '#e3242b'][k];
+      document.body.appendChild(h); setTimeout(() => h.remove(), 2000);
+    }
+  });
+  // the places we've already "visited" this month, joined by a soft dashed line
+  function drawTrail(upto) {
+    if (trail) trail.remove();
+    trail = L.layerGroup().addTo(map);
+    const pts = meta.order.slice(0, upto).map(n => meta.places[n - 1]);
+    if (pts.length > 1) L.polyline(pts.map(p => [p.lat, p.lon]), { color: '#f6a3b6', weight: 2, opacity: .55, dashArray: '2 8', lineCap: 'round', interactive: false }).addTo(trail);
+    const seen = new Set();
+    pts.slice(0, -1).forEach(p => { const k = p.lat + ',' + p.lon; if (seen.has(k)) return; seen.add(k);
+      L.marker([p.lat, p.lon], { icon: L.divIcon({ className: '', html: '<div class="past"></div>', iconSize: [9, 9], iconAnchor: [4.5, 4.5] }), interactive: false }).addTo(trail); });
+  }
   const later = (f, ms) => timers.push(setTimeout(f, ms));
 
   function ensureMap() {
@@ -670,6 +707,7 @@ resize();
       later(() => { pimg.src = url; pcap.textContent = p.name; pimg.classList.remove('fade'); pola.classList.add('on'); }, 350);
       top.innerHTML = label;
       top.classList.add('on');
+      later(() => tiny.classList.add('on'), 2600);
     }, reduce ? 0 : flyDur * 1000 - 300);
   }
   async function start(st) {
@@ -683,18 +721,18 @@ resize();
     if (st.ISBDAY) {
       // birthday: a little tour of every memory
       let k = 0;
-      const tour = () => { show(order[k % order.length], `Toi & moi · ${k % order.length + 1}/${order.length}<span>Joyeux anniversaire ♥</span>`, k ? 2.6 : 4.2); k++; later(tour, k === 1 ? 8000 : 6000); };
+      const tour = () => { drawTrail(k % order.length + 1); show(order[k % order.length], `Toi & moi · ${k % order.length + 1}/${order.length}<span>Joyeux anniversaire ♥</span>`, k ? 2.6 : 4.2); k++; later(tour, k === 1 ? 8000 : 6000); };
       later(tour, 1200);
     } else {
       const d = st.NOVDAY >= 1 && st.NOVDAY <= order.length ? st.NOVDAY : (st.dayKey % order.length) + 1;
       const tail = st.NOVDAY >= 1 && st.NOVDAY < order.length ? 'Demain, une autre surprise t’attend' : st.NOVDAY === order.length ? 'Demain, c’est ton jour ♥' : 'Toi & moi';
-      later(() => show(order[d - 1], `Jour ${d} sur ${order.length}<span>${tail}</span>`, 4.5), 1200);
+      later(() => { drawTrail(d); show(order[d - 1], `Jour ${d} sur ${order.length}<span>${tail}</span>`, 4.5); }, 1200);
     }
   }
   function reset() {
     timers.forEach(clearTimeout); timers = [];
     started = false; window.__bqPause = false;
-    mem.classList.remove('on'); pola.classList.remove('on'); top.classList.remove('on');
+    mem.classList.remove('on'); pola.classList.remove('on'); top.classList.remove('on'); tiny.classList.remove('on'); lb.classList.remove('on');
     setTimeout(() => { if (!started) mem.hidden = true; }, 600);
   }
   addEventListener('bq:regrow', () => { window.__bqTapped = false; reset(); });
