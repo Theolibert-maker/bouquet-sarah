@@ -16,7 +16,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%B7%3C/text%3E%3C/svg%3E">
 <title>Pour Sarah ♥</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Instrument+Serif:ital@0;1&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Instrument+Serif:ital@0;1&family=Caveat:wght@600&display=swap">
+<link rel="stylesheet" href="vendor/leaflet.css">
 <style>
 /* Layout: full-bleed night canvas, dense ASCII bouquet filling the frame; serif caption top, one control */
 :root{
@@ -52,7 +53,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .bday{display:block;font-style:italic;font-size:clamp(30px,8vw,52px);line-height:1;color:#f6a3b6;text-shadow:0 0 28px rgba(240,107,138,.45)}
 .sm{display:block;margin-top:12px;font-size:clamp(17px,4.2vw,26px);color:#e4dccb}
 .hint{display:block;margin-top:14px;font:700 9px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
-#regrow{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));opacity:0;transition:opacity 1.5s}
+#regrow{z-index:6;position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));opacity:0;transition:opacity 1.5s}
 #regrow.show{opacity:.7}
 .intro{position:fixed;inset:0;display:grid;place-items:center;text-align:center;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));transition:opacity 1.2s}
 .intro.gone{opacity:0;pointer-events:none}
@@ -64,6 +65,30 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .intro button{font-size:11px;padding:13px 22px;border-color:#f06b8a;color:#f6d6de;animation:pulse 2.4s ease-in-out infinite}
 @keyframes pulse{50%{box-shadow:0 0 0 8px rgba(240,107,138,.12)}}
 @media (prefers-reduced-motion: reduce){.intro button{animation:none}.line,.intro{transition:none}}
+
+/* souvenir du jour: map zoom + polaroid */
+.mem{position:fixed;inset:0;z-index:5;opacity:0;transition:opacity 1.8s ease;background:var(--bg)}
+.mem.on{opacity:1}
+#map{position:absolute;inset:0;background:#040404}
+.vig{position:absolute;inset:0;pointer-events:none;z-index:401;background:radial-gradient(ellipse at 50% 32%,rgba(4,4,4,0) 30%,rgba(4,4,4,.88) 100%)}
+.memtop{position:absolute;z-index:402;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 24px);text-align:center;pointer-events:none;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  font:700 10px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:#f6a3b6;opacity:0;transition:opacity 1.2s}
+.memtop.on{opacity:1}
+.memtop span{display:block;margin-top:8px;font:400 italic clamp(22px,5.5vw,32px)/1.1 var(--serif);letter-spacing:0;text-transform:none;color:var(--ink)}
+.pola{position:absolute;z-index:403;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);width:min(70vw,320px,calc((100vh - 260px) * .64));margin:0;padding:10px 10px 0;
+  background:#f7f3ea;border-radius:2px;box-shadow:0 24px 60px rgba(0,0,0,.65),0 0 0 1px rgba(0,0,0,.08);
+  transform:translate(-50%,130%) rotate(-7deg);opacity:0;transition:transform 1.5s cubic-bezier(.2,.9,.25,1.12),opacity 1s}
+.pola.on{transform:translate(-50%,0) rotate(-3deg);opacity:1}
+.pola img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;background:#d9d3c7;transition:opacity .6s}
+.pola img.fade{opacity:0}
+.pola figcaption{font:600 clamp(22px,6vw,30px)/1 "Caveat",cursive;color:#2b2622;text-align:center;padding:10px 4px 14px}
+.pin{width:18px;height:18px;border-radius:50%;background:#f06b8a;box-shadow:0 0 0 4px rgba(240,107,138,.35),0 0 24px 6px rgba(240,107,138,.6);animation:pin 2s ease-out infinite}
+@keyframes pin{0%{box-shadow:0 0 0 0 rgba(240,107,138,.6),0 0 24px 6px rgba(240,107,138,.6)}100%{box-shadow:0 0 0 22px rgba(240,107,138,0),0 0 24px 6px rgba(240,107,138,.6)}}
+.leaflet-container{background:#040404;font-family:var(--mono)}
+.leaflet-control-attribution{background:rgba(4,4,4,.55)!important;color:#6d685c!important;font-size:8px!important}
+.leaflet-control-attribution a{color:#8a8578!important}
+@media (prefers-reduced-motion: reduce){.mem,.pola,.memtop{transition:none}.pin{animation:none}}
 </style>
 <style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0}</style>
 </head>
@@ -72,6 +97,12 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 <canvas id="c" aria-label="Bouquet de lys, roses et tulipes dessiné en caractères ASCII"></canvas>
 <p class="line" id="line1">Pas de fleuriste ouvert à cette heure-ci…<br><em>alors je t'ai codé un bouquet.</em></p>
 <p class="line" id="line2"><span class="bday" id="bday"></span><span class="sm" id="sm"></span><small class="hint">touche l'écran</small></p>
+<div class="mem" id="mem" hidden>
+  <div id="map" aria-label="Carte du souvenir du jour"></div>
+  <div class="vig"></div>
+  <div class="memtop" id="memtop"></div>
+  <figure class="pola" id="pola"><img id="polaimg" alt="Souvenir de nous deux"><figcaption id="polacap"></figcaption></figure>
+</div>
 <button id="regrow" type="button">↻ Revoir</button>
 <div class="intro" id="intro">
   <div>
@@ -106,7 +137,7 @@ const BUDS = [[-0.14,-0.76,C.white],[0.14,-0.74,C.pink],[0.44,-0.56,C.yellow],[-
 
 // ---- which day is it? (preview another day with #nov5, #nov11, …) ----
 const TODAY = (() => {
-  const d = new Date(), m = location.hash.match(/^#nov(\d{1,2})$/);
+  const d = new Date(), m = location.hash.match(/nov(\d{1,2})/);
   if (m) { d.setMonth(10, Math.min(30, Math.max(1, +m[1]))); }
   return d;
 })();
@@ -462,6 +493,8 @@ function frame(now) {
   requestAnimationFrame(frame);
   if (now - last < 30) return; last = now;
   const time = (now - t0) / 1000;
+  window.__bq = { time, opened, M0, NOVDAY, ISBDAY, dayKey };
+  if (window.__bqPause) return;
   if (opened) scene(time); else { o.setTransform(1,0,0,1,0,0); o.clearRect(0,0,cols,rows); }
   line1.classList.toggle('show', opened && !reduce && time > 5.8 && time < M0 - .2);
   line2.classList.toggle('show', opened && (reduce || time > M0 + 4.2));
@@ -558,7 +591,7 @@ if (ISBDAY) {
   smEl.innerHTML = `Celles-là, elles ne faneront pas ${E('😙😉❤️')}`;
 }
 const line1 = document.getElementById('line1'), line2 = document.getElementById('line2'), rg = document.getElementById('regrow'), intro = document.getElementById('intro');
-const regrow = () => { t0 = performance.now(); pollen = []; confetti = []; confettiDone = false; };
+const regrow = () => { t0 = performance.now(); pollen = []; confetti = []; confettiDone = false; window.dispatchEvent(new Event('bq:regrow')); };
 document.getElementById('open').addEventListener('click', () => { opened = true; regrow(); intro.classList.add('gone'); });
 rg.addEventListener('click', e => { e.stopPropagation(); regrow(); });
 const HEARTS = ['#f06b8a', '#e3242b', '#ef8fb0', '#d64a9a'];
@@ -572,6 +605,92 @@ cv.addEventListener('pointerdown', e => {
 addEventListener('resize', resize);
 resize();
 (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { resize(); requestAnimationFrame(frame); });
+})();
+</script>
+<script src="vendor/leaflet.js"></script>
+<script>
+// ---- souvenir du jour: photos are AES-GCM encrypted; the key only lives in the link Sarah gets (#k=…)
+(() => {
+  const km = location.hash.match(/k=([A-Za-z0-9_-]{20,})/);
+  if (!km || !window.crypto || !crypto.subtle || !window.L) return;
+  const b64u = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - s.length % 4) % 4)), c => c.charCodeAt(0));
+  const keyP = crypto.subtle.importKey('raw', b64u(km[1]), 'AES-GCM', false, ['decrypt']);
+  const dec = async url => {
+    const b = new Uint8Array(await (await fetch(url)).arrayBuffer());
+    return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b.slice(0, 12) }, await keyP, b.slice(12));
+  };
+  let meta = null, imgs = {};
+  const metaP = dec('m/meta.bin').then(b => (meta = JSON.parse(new TextDecoder().decode(b)))).catch(() => null);
+  const photo = async n => imgs[n] || (imgs[n] = URL.createObjectURL(new Blob([await dec(`m/${n}.bin`)], { type: 'image/jpeg' })));
+
+  const mem = document.getElementById('mem'), top = document.getElementById('memtop'), pola = document.getElementById('pola');
+  const pimg = document.getElementById('polaimg'), pcap = document.getElementById('polacap');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let map, marker, started = false, timers = [];
+  const later = (f, ms) => timers.push(setTimeout(f, ms));
+
+  function ensureMap() {
+    if (map) return;
+    map = L.map('map', { zoomControl: false, attributionControl: true, zoomSnap: 0.25 }).setView([49.4, 11], 4.25);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19, subdomains: 'abcd', attribution: '&copy; OpenStreetMap &copy; CARTO'
+    }).addTo(map);
+  }
+  // put the pin in the clear space above the polaroid
+  function centerFor(p, z) {
+    const H = innerHeight, pr = pola.getBoundingClientRect();
+    const polaTop = pola.classList.contains('on') ? pr.top : H - (pr.height + 72);
+    const pinY = Math.max(110, polaTop * .58);
+    const pt = map.project([p.lat, p.lon], z).add([0, H / 2 - pinY]);
+    return map.unproject(pt, z);
+  }
+  function pin(p) {
+    const icon = L.divIcon({ className: '', html: '<div class="pin"></div>', iconSize: [18, 18], iconAnchor: [9, 9] });
+    if (marker) marker.setLatLng([p.lat, p.lon]); else marker = L.marker([p.lat, p.lon], { icon, interactive: false }).addTo(map);
+  }
+  async function show(n, label, flyDur) {
+    const p = meta.places[n - 1];
+    const url = await photo(n);
+    map.flyTo(centerFor(p, p.z), p.z, { duration: reduce ? 0 : flyDur, easeLinearity: .2 });
+    later(() => {
+      pin(p);
+      pimg.classList.add('fade');
+      later(() => { pimg.src = url; pcap.textContent = p.name; pimg.classList.remove('fade'); pola.classList.add('on'); }, 350);
+      top.innerHTML = label;
+      top.classList.add('on');
+    }, reduce ? 0 : flyDur * 1000 - 300);
+  }
+  async function start(st) {
+    started = true;
+    if (!(await metaP)) return;
+    ensureMap();
+    mem.hidden = false;
+    requestAnimationFrame(() => { mem.classList.add('on'); map.invalidateSize(); map.setView([49.4, 11], 4.25, { animate: false }); });
+    later(() => { window.__bqPause = true; }, 2200);
+    const order = meta.order;
+    if (st.ISBDAY) {
+      // birthday: a little tour of every memory
+      let k = 0;
+      const tour = () => { show(order[k % order.length], `Nos souvenirs · ${k % order.length + 1}/${order.length}<span>Joyeux anniversaire ♥</span>`, k ? 2.6 : 4.2); k++; later(tour, k === 1 ? 8000 : 6000); };
+      later(tour, 1200);
+    } else {
+      const d = st.NOVDAY >= 1 && st.NOVDAY <= order.length ? st.NOVDAY : (st.dayKey % order.length) + 1;
+      const tail = st.NOVDAY >= 1 && st.NOVDAY < order.length ? 'Demain, un autre souvenir t’attend' : 'Un souvenir de nous';
+      later(() => show(order[d - 1], `Souvenir du jour · ${d}/${order.length}<span>${tail}</span>`, 4.5), 1200);
+    }
+  }
+  function reset() {
+    timers.forEach(clearTimeout); timers = [];
+    started = false; window.__bqPause = false;
+    mem.classList.remove('on'); pola.classList.remove('on'); top.classList.remove('on');
+    setTimeout(() => { if (!started) mem.hidden = true; }, 600);
+  }
+  addEventListener('bq:regrow', reset);
+  (function watch() {
+    const st = window.__bq;
+    if (st && st.opened && !started && st.time > st.M0 + 9.5) start(st);
+    requestAnimationFrame(watch);
+  })();
 })();
 </script>
 
