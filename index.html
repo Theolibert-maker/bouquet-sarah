@@ -342,6 +342,7 @@ body.music .memtop{padding-left:58px;padding-right:58px}
 .stn{padding:0 .06em;font:700 calc(var(--stw) * .3)/1 var(--mono);letter-spacing:-.05em;background:linear-gradient(115deg,var(--gold),var(--pink) 70%);-webkit-background-clip:text;background-clip:text;color:transparent;
   opacity:0;transform:translateY(16px);transition:opacity .5s .15s,transform .8s cubic-bezier(.2,.9,.25,1.2) .15s}
 .stt{margin-top:4px;font:400 calc(var(--stw) * .1)/1.05 var(--hand);color:#fff;opacity:0;transform:translateY(10px);transition:opacity .7s .4s,transform .7s .4s}
+.stt.solo{font-size:calc(var(--stw) * .135)}
 .stsub{margin-top:9px;font-size:12px;line-height:1.45;color:rgba(255,255,255,.72);opacity:0;transition:opacity .7s .7s}
 .sts.on .stn,.sts.on .stt,.sts.on .stsub{opacity:1;transform:none}
 .sttap{position:absolute;z-index:3;right:12px;top:24px;font-size:11px;color:rgba(255,255,255,.75);animation:soft 2.2s ease-in-out infinite;pointer-events:none}
@@ -582,7 +583,7 @@ const dec = async url => {
   const b = new Uint8Array(await (await fetch(url, { cache: 'no-cache' })).arrayBuffer());
   return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b.slice(0, 12) }, k, b.slice(12));
 };
-const dataP = dec('m/data-v7.bin').then(b => JSON.parse(new TextDecoder().decode(b))).catch(() => null);
+const dataP = dec('m/data-v8.bin').then(b => JSON.parse(new TextDecoder().decode(b))).catch(() => null);
 window.__bqShared = { dec, dataP };
 
 // ---- comment le bouquet est arrangé (ça change selon les jours) ----
@@ -940,7 +941,7 @@ const GLYPHS = {
   GIFT: { w: 1.6, p: [[[0,.6],[1.6,.6],[1.6,1.4],[0,1.4],[0,.6]],[[.8,.6],[.8,1.4]],[[.8,.6],[.42,.18],[.22,.42],[.8,.6],[1.18,.18],[1.38,.42],[.8,.6]]] },
   CAKE: { w: 1.8, p: [[[0,1.4],[0,.78],[1.8,.78],[1.8,1.4],[0,1.4]],[[.32,.78],[.32,.42],[1.48,.42],[1.48,.78]],Array.from({ length: 13 }, (_, k) => [k / 12 * 1.8, 1.02 + .07 * Math.sin(k / 12 * Math.PI * 4)]),[[.9,.42],[.9,.12]],ell(.9, .03, .06, .09, 12)] }
 };
-const SHAPES = { SARAH: ['S','A','R','A','H'], BISOU: ['B','I','S','O','U'], TOI: ['T','O','I'], NOUS: ['N','O','U','S'], XO: ['X','O'], LT3: ['<','3'], HEART: ['♥'], INF: ['∞'], CROWN: ['CROWN'], GIFT: ['GIFT'], CAKE: ['CAKE'] };
+const SHAPES = { SARAH: ['S','A','R','A','H'], BISOU: ['B','I','S','O','U'], BISOUS: ['B','I','S','O','U','S'], TOI: ['T','O','I'], NOUS: ['N','O','U','S'], XO: ['X','O'], LT3: ['<','3'], HEART: ['♥'], INF: ['∞'], CROWN: ['CROWN'], GIFT: ['GIFT'], CAKE: ['CAKE'] };
 // pour SARAH j'ai placé les fleurs à la main : [lettre, x, y]
 const SPOTS = [[0,1,.18],[2,0,0],[1,.5,0],[3,.5,0],[0,0,1.22],[2,1,1.4],[4,0,0],[4,1,0],[1,1,1.4],[3,1,1.4]];
 const BUD_SPOTS = [[1,0,1.4],[3,0,1.4],[4,0,1.4],[2,0,1.4]];
@@ -1017,7 +1018,7 @@ function scene(time) {
   });
   if (ARR.vase) vase(ease(T / 1.2) * keep);
   // les lettres poussent comme des tiges
-  const sw = Math.max(cw * 2.6, SHAPE.length === 5 ? U * .15 : Math.min(U * .11, 20));
+  const sw = Math.max(cw * 2.6, SHAPE.length >= 5 ? U * .15 : Math.min(U * .11, 20));
   nameLines.forEach((letter, li) => {
     const g = ease((T - M0 - .9 - li * .3) / 1.8);
     letter.forEach((pl, k) => {
@@ -1824,7 +1825,8 @@ console.log('%cqu’est-ce que tu fais dans la console toi 👀♥', 'color:#f06
     const slides = S.map(x => {
       const sl = el('div', 'sts'), img = el('img'), t = el('div', 'stx'), num = el('div', 'stn', txt(x.n));
       img.alt = ''; img.draggable = false; imgs.push(img); if (x.pos) img.style.objectPosition = img.style.transformOrigin = x.pos;
-      t.append(num, el('div', 'stt', dg(txt(x.t))));
+      if (x.n) t.appendChild(num);
+      t.appendChild(el('div', x.n ? 'stt' : 'stt solo', dg(txt(x.t))));
       if (x.s) t.appendChild(el('div', 'stsub', txt(x.s)));
       if (x.fit) { const bg = el('img', 'bgb'); bg.alt = ''; img.className = 'fg'; sl.classList.add('fit'); sl.appendChild(bg); if (x.p) pic(x.p).then(u => { bg.src = u; }); }
       sl.append(img, t); box.appendChild(sl); return { sl, num, n: /^\d+$/.test(x.n) ? +x.n : 0 };
