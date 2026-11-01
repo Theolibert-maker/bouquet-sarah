@@ -628,7 +628,7 @@ resize();
   const b64u = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - s.length % 4) % 4)), c => c.charCodeAt(0));
   const keyP = crypto.subtle.importKey('raw', b64u(km[1]), 'AES-GCM', false, ['decrypt']);
   const dec = async url => {
-    const b = new Uint8Array(await (await fetch(url)).arrayBuffer());
+    const b = new Uint8Array(await (await fetch(url, { cache: 'no-cache' })).arrayBuffer());
     return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b.slice(0, 12) }, await keyP, b.slice(12));
   };
   let meta = null, imgs = {};
