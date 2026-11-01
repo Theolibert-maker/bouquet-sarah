@@ -3,7 +3,18 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta charset="utf-8">
-<title>Un bouquet pour Sarah</title>
+<meta name="theme-color" content="#040404">
+<meta name="description" content="Pas de fleuriste ouvert à cette heure-ci… alors je t'ai codé un bouquet.">
+<meta property="og:title" content="Sarah, j'ai un petit truc pour toi ♥">
+<meta property="og:description" content="Ouvre-le ♥">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://theolibert-maker.github.io/bouquet-sarah/">
+<meta property="og:image" content="https://theolibert-maker.github.io/bouquet-sarah/preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%B7%3C/text%3E%3C/svg%3E">
+<title>Pour Sarah ♥</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Instrument+Serif:ital@0;1&display=swap">
 <style>
@@ -35,6 +46,8 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .line.show{opacity:1;transform:none;filter:none}
 #line1{top:calc(env(safe-area-inset-top,0px) + 34px)}
 .emo{white-space:nowrap}
+.bday{display:block;font-style:italic;font-size:clamp(30px,8vw,52px);line-height:1;color:#f6a3b6;text-shadow:0 0 28px rgba(240,107,138,.45)}
+.sm{display:block;margin-top:12px;font-size:clamp(17px,4.2vw,26px);color:#e4dccb}
 .hint{display:block;margin-top:14px;font:700 9px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 #regrow{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));opacity:0;transition:opacity 1.5s}
 #regrow.show{opacity:.7}
@@ -55,7 +68,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 <canvas id="c" aria-label="Bouquet de lys, roses et tulipes dessiné en caractères ASCII"></canvas>
 <p class="line" id="line1">Pas de fleuriste ouvert à cette heure-ci…<br><em>alors je t'ai codé un bouquet.</em></p>
-<p class="line" id="line2">Celles-là, elles ne faneront pas <span class="emo">😙😉❤️</span><small class="hint">touche l'écran</small></p>
+<p class="line" id="line2"><span class="bday">Bon mois d'anniversaire <span class="emo">🎂✨</span></span><span class="sm">Novembre commence, ton mois commence…<br>et celles-là, elles ne faneront pas <span class="emo">😙😉❤️</span></span><small class="hint">touche l'écran</small></p>
 <button id="regrow" type="button">↻ Revoir</button>
 <div class="intro" id="intro">
   <div>
@@ -72,7 +85,7 @@ const off = document.createElement('canvas'), o = off.getContext('2d', { willRea
 const glow = document.createElement('canvas'), g = glow.getContext('2d');
 const DENSE = '@#%&$8BWM0', MID = '+=*xo:;';
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let W, H, dpr, cw, ch, cols, rows, S, ox, oy, baseX, baseY, stars = [], pollen = [], t0 = 0, opened = false, last = 0, font;
+let W, H, dpr, cw, ch, cols, rows, S, ox, oy, baseX, baseY, stars = [], pollen = [], shoots = [], confetti = [], confettiDone = false, t0 = 0, opened = false, last = 0, font;
 
 const C = {
   red:'#e3242b', crimson:'#a3111b', white:'#f5f0e6', cream:'#efd9bd', yellow:'#f4cb2e', gold:'#e9a526',
@@ -323,7 +336,7 @@ function layoutName() {
   nameLines = [...NAME].map((L, li) => GLYPHS[L].map(pl => pl.map(([x, y]) => at(li, x, y))));
   flowerTgt = SPOTS.map(([li, x, y]) => at(li, x, y));
   budTgt = BUD_SPOTS.map(([li, x, y]) => at(li, x, y));
-  const l2 = document.getElementById('line2'); if (l2) l2.style.top = (y0 + 1.4 * U + U * .75) + 'px';
+  const l2 = document.getElementById('line2'); if (l2) l2.style.top = (y0 + 1.4 * U + U * .65) + 'px';
 }
 function strokePart(pl, g, col, w) {
   if (g <= 0) return;
@@ -450,6 +463,31 @@ function frame(now) {
       ctx.fillText(ch_, c * cw, r * ch);
     }
   }
+  // birthday confetti once the name is written
+  if (!reduce && opened && !confettiDone && time > M0 + 4) {
+    confettiDone = true;
+    const cols8 = ['#f06b8a', '#f1c53f', '#cf3fcc', '#7cc44a', '#f3ab82', '#f5f0e6'];
+    for (let k = 0; k < 90; k++) confetti.push({ x: Math.random() * W, y: -Math.random() * H * .4, vx: (Math.random() - .5) * .8, vy: 1.2 + Math.random() * 1.8,
+      ch: '*+x·o♥'[(Math.random() * 6) | 0], col: cols8[(Math.random() * 6) | 0], ph: Math.random() * 6 });
+  }
+  confetti = confetti.filter(cf => {
+    cf.x += cf.vx + Math.sin(time * 3 + cf.ph) * .6; cf.y += cf.vy;
+    ctx.fillStyle = cf.col; ctx.fillText(cf.ch, cf.x, cf.y);
+    return cf.y < H + 10;
+  });
+  // the odd shooting star
+  if (!reduce && Math.random() < .006 && shoots.length < 2)
+    shoots.push({ x: Math.random() * W * .8 + W * .2, y: Math.random() * H * .3, vx: -(3 + Math.random() * 3), vy: 1.2 + Math.random() * 1.5, life: 1 });
+  shoots = shoots.filter(sh => {
+    sh.x += sh.vx; sh.y += sh.vy; sh.life -= .018;
+    for (let k = 0; k < 14; k++) {
+      ctx.globalAlpha = Math.max(0, sh.life * (1 - k / 14));
+      ctx.fillStyle = k < 2 ? '#fff6dc' : '#c9c2ae';
+      ctx.fillText(k < 1 ? '*' : k < 5 ? '+' : '.', sh.x - sh.vx * k * .9, sh.y - sh.vy * k * .9);
+    }
+    ctx.globalAlpha = 1;
+    return sh.life > 0 && sh.x > -50 && sh.y < H;
+  });
   // drifting pollen once the bouquet is open
   if (!reduce && time > 5 && Math.random() < .5 && pollen.length < 40) {
     const f = flowers[(Math.random() * flowers.length) | 0], [x, y] = P(f.x, f.y);
@@ -469,7 +507,7 @@ function frame(now) {
 }
 
 const line1 = document.getElementById('line1'), line2 = document.getElementById('line2'), rg = document.getElementById('regrow'), intro = document.getElementById('intro');
-const regrow = () => { t0 = performance.now(); pollen = []; };
+const regrow = () => { t0 = performance.now(); pollen = []; confetti = []; confettiDone = false; };
 document.getElementById('open').addEventListener('click', () => { opened = true; regrow(); intro.classList.add('gone'); });
 rg.addEventListener('click', e => { e.stopPropagation(); regrow(); });
 const HEARTS = ['#f06b8a', '#e3242b', '#ef8fb0', '#d64a9a'];
