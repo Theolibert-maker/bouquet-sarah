@@ -112,6 +112,29 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .fh{position:fixed;z-index:15;pointer-events:none;font-size:26px;color:#f06b8a;text-shadow:0 0 14px rgba(240,107,138,.6);animation:fh 1.6s ease-out forwards}
 @keyframes fh{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}20%{opacity:1;transform:translate(-50%,-60%) scale(1.15)}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),-260%) scale(.9)}}
 @media (prefers-reduced-motion: reduce){.mem,.pola,.memtop,.tiny,.lb,.lb img{transition:none}.pin{animation:none}.fh{animation-duration:.01s}}
+
+.askbtn{position:absolute;z-index:404;left:50%;top:calc(env(safe-area-inset-top,0px) + 120px);transform:translate(-50%,-8px);opacity:0;pointer-events:none;
+  transition:opacity 1s,transform 1s;font:700 10px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:#1a0f12;background:linear-gradient(180deg,#ffe6a8,#f1c53f);
+  border:0;border-radius:999px;padding:11px 18px;box-shadow:0 8px 30px rgba(241,197,63,.35);white-space:nowrap}
+.askbtn.on{opacity:1;transform:translate(-50%,0);pointer-events:auto;animation:pulse 2.4s ease-in-out 1s infinite}
+.ask{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:rgba(4,4,4,.86);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;transition:opacity .5s;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.ask.on{opacity:1;pointer-events:auto}
+.ask:not(.on) *{pointer-events:none!important}
+.askcard{min-width:0;max-width:100%;box-sizing:border-box;width:min(100%,420px);background:#120d10;border:1px solid #3a2a2e;border-radius:18px;padding:26px 20px 20px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.askcard .k{font:700 9px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:#f6a3b6}
+.askcard h2{margin:10px 0 18px;font:400 italic clamp(24px,6.5vw,32px)/1.12 var(--serif);color:var(--ink);text-wrap:balance}
+.opts{display:grid;gap:10px}
+.opt{white-space:normal;text-transform:none;letter-spacing:0;min-width:0;display:flex;align-items:center;gap:12px;text-align:left;width:100%;padding:13px 14px;border-radius:12px;border:1px solid #33262a;background:#1a1316;color:var(--ink);
+  font:400 18px/1.2 var(--serif);cursor:pointer;transition:border-color .2s,background .2s,transform .2s}
+.opt:hover,.opt:focus-visible{border-color:#f06b8a;background:#22171b;outline:none}
+.opt.sel{border-color:#f1c53f;background:#2a2014;transform:scale(1.02)}
+.opt .e{font-size:22px;width:28px;text-align:center;flex:none}
+.askdone{display:none}
+.askcard.done .opts{display:none}.askcard.done .askdone{display:block}
+.askdone p{margin:0 0 18px;font:400 20px/1.35 var(--serif);color:#e4dccb}
+.send{font:700 10px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:#1a0f12;background:linear-gradient(180deg,#ffe6a8,#f1c53f);border:0;border-radius:999px;padding:13px 20px;cursor:pointer}
+.later{display:block;margin:14px auto 0;background:none;border:0;font:700 9px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:#8d8577;cursor:pointer}
 </style>
 <style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0}</style>
 </head>
@@ -126,6 +149,24 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   <div class="memtop" id="memtop"></div>
   <div class="tiny" id="tiny">touche la photo pour l’agrandir</div>
   <figure class="pola" id="pola"><img id="polaimg" alt="Souvenir de nous deux"><figcaption id="polacap"></figcaption></figure>
+</div>
+<button class="askbtn" id="askbtn" type="button">Une dernière question ✨</button>
+<div class="ask" id="ask" role="dialog" aria-modal="true" aria-labelledby="askq">
+  <div class="askcard" id="askcard">
+    <div class="k">Pour le 11 novembre</div>
+    <h2 id="askq">Ce soir-là, tu rêverais plutôt de…</h2>
+    <div class="opts">
+      <button class="opt" type="button" data-a="lumieres"><span class="e">🌃</span>Dîner au-dessus des lumières de la ville</button>
+      <button class="opt" type="button" data-a="mythique"><span class="e">🕯️</span>Un lieu mythique, chic et un peu hors du temps</button>
+      <button class="opt" type="button" data-a="surprise"><span class="e">🎨</span>Une expérience originale qui me surprend</button>
+      <button class="opt" type="button" data-a="japon"><span class="e">🍣</span>Quelque chose de fin et délicat, version Japon</button>
+    </div>
+    <div class="askdone">
+      <p>Noté… je ne te dis rien de plus 🤫<br>Envoie-moi juste ta réponse.</p>
+      <button class="send" id="send" type="button">Envoyer ma réponse ♥</button>
+    </div>
+    <button class="later" id="later" type="button">Fermer</button>
+  </div>
 </div>
 <div class="lb" id="lb"><img id="lbimg" alt="Photo agrandie"></div>
 <button id="regrow" type="button">↻ Revoir</button>
@@ -727,14 +768,30 @@ resize();
       const d = st.NOVDAY >= 1 && st.NOVDAY <= order.length ? st.NOVDAY : (st.dayKey % order.length) + 1;
       const tail = st.NOVDAY >= 1 && st.NOVDAY < order.length ? 'Demain, une autre surprise t’attend' : st.NOVDAY === order.length ? 'Demain, c’est ton jour ♥' : 'Toi & moi';
       later(() => { drawTrail(d); show(order[d - 1], `Jour ${d} sur ${order.length}<span>${tail}</span>`, 4.5); }, 1200);
+      if (st.NOVDAY === 1) later(() => askbtn.classList.add('on'), 9500);
     }
   }
   function reset() {
     timers.forEach(clearTimeout); timers = [];
     started = false; window.__bqPause = false;
-    mem.classList.remove('on'); pola.classList.remove('on'); top.classList.remove('on'); tiny.classList.remove('on'); lb.classList.remove('on');
+    mem.classList.remove('on'); pola.classList.remove('on'); top.classList.remove('on'); tiny.classList.remove('on'); lb.classList.remove('on'); askbtn.classList.remove('on'); ask.classList.remove('on');
     setTimeout(() => { if (!started) mem.hidden = true; }, 600);
   }
+  // only on 1 November: a little question that steers the birthday dinner
+  const askbtn = document.getElementById('askbtn'), ask = document.getElementById('ask'), askcard = document.getElementById('askcard');
+  let answer = null;
+  askbtn.addEventListener('click', e => { e.stopPropagation(); ask.classList.add('on'); });
+  document.getElementById('later').addEventListener('click', () => ask.classList.remove('on'));
+  ask.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+    ask.querySelectorAll('.opt').forEach(x => x.classList.remove('sel')); b.classList.add('sel');
+    answer = b.textContent.trim();
+    setTimeout(() => askcard.classList.add('done'), 450);
+  }));
+  document.getElementById('send').addEventListener('click', async () => {
+    const text = `Ma réponse pour le 11 novembre : ${answer} ♥`;
+    try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+    location.href = 'https://wa.me/?text=' + encodeURIComponent(text);
+  });
   addEventListener('bq:regrow', () => { window.__bqTapped = false; reset(); });
   (function watch() {
     const st = window.__bq;
