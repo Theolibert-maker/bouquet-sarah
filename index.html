@@ -138,6 +138,26 @@ button:focus-visible{outline:1px dashed var(--rose);outline-offset:4px}
 .lb.on{opacity:1;pointer-events:auto;cursor:zoom-out}
 .lb img{max-width:100%;max-height:100%;border-radius:4px;box-shadow:0 30px 80px rgba(0,0,0,.7);transform:scale(.94);transition:transform .45s cubic-bezier(.2,.9,.25,1.1)}
 .lb.on img{transform:none}
+.mem{transition:opacity 1.6s ease,background-color 3.2s ease}
+#map,.vig{transition:opacity 3.2s ease}
+.mem.fading{background-color:transparent}
+.mem.fading #map,.mem.fading .vig{opacity:0}
+body.finale .fin,body.finale .term{visibility:hidden}
+/* le final du 11 */
+.finale{position:absolute;z-index:405;left:0;right:0;top:var(--fy,52vh);margin:0;text-align:center;pointer-events:none;
+  padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.finale .cmt{margin:0;font-size:12px;opacity:0;transition:opacity 1s}
+.finale.on .cmt{opacity:1}
+.fbig{margin:4px auto 0;max-width:12em;font-size:clamp(36px,10vw,60px);line-height:1.02;color:var(--rose);text-shadow:0 0 22px rgba(240,107,138,.35);text-wrap:balance;
+  transform:rotate(-2deg);clip-path:inset(-40% 100% -40% 0);transition:clip-path 2.2s cubic-bezier(.55,0,.35,1)}
+.finale.on .fbig{clip-path:inset(-40% -6% -40% -6%)}
+.flines{width:max-content;max-width:100%;margin:16px auto 0;text-align:left;font-size:clamp(13px,3.6vw,16px);line-height:1.75}
+.flines .p{color:var(--pink)}
+.again2{margin-top:24px;padding:9px 15px;background:rgba(4,4,4,.6);border:1px solid var(--pink);border-radius:7px;color:var(--rose);font-size:13px;
+  opacity:0;transform:translateY(6px);transition:opacity .9s,transform .9s,background-color .2s;pointer-events:none}
+.again2.on{opacity:1;transform:none;pointer-events:auto}
+.again2:hover{background:#2a1a20}
+@media (prefers-reduced-motion: reduce){.fbig{clip-path:none!important;transition:none}.mem,#map,.vig,.again2,.finale .cmt{transition:none}}
 .fh{position:fixed;z-index:15;pointer-events:none;font-size:26px;color:var(--pink);text-shadow:0 0 14px rgba(240,107,138,.6);animation:fh 1.6s ease-out forwards}
 @keyframes fh{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}20%{opacity:1;transform:translate(-50%,-60%) scale(1.15)}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),-260%) scale(.9)}}
 
@@ -202,6 +222,12 @@ button:focus-visible{outline:1px dashed var(--rose);outline-offset:4px}
   <div class="memtop" id="memtop"></div>
   <div class="tiny" id="tiny">(touche la photo)</div>
   <figure class="pola" id="pola"><img id="polaimg" alt="Nous deux"><figcaption id="polacap"></figcaption></figure>
+  <div class="finale" id="finale" hidden>
+    <p class="cmt">// 11.11</p>
+    <p class="fbig hand" id="fbig"></p>
+    <div class="flines" id="flines"></div>
+    <button class="again2" id="again2" type="button">↻ revoir nos souvenirs</button>
+  </div>
 </div>
 
 <button class="askbtn" id="askbtn" type="button"><b>&gt;</b> une dernière question<span class="cur"></span></button>
@@ -259,10 +285,11 @@ const LILIES = [
 ];
 const BUDS = [[-0.14,-0.76,C.white],[0.14,-0.74,C.pink],[0.44,-0.56,C.yellow],[-0.45,-0.58,C.red]];
 
-// quel jour on est ? (pour tester un autre jour : ajouter #nov5, #nov11… au lien)
+// quel jour on est ?
+const fnv = s => { let h = 0x811c9dc5; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return h; };
 const TODAY = (() => {
-  const d = new Date(), m = location.hash.match(/nov(\d{1,2})/);
-  if (m) { d.setMonth(10, Math.min(30, Math.max(1, +m[1]))); }
+  const d = new Date(), h = location.hash, m = h.match(/nov(\d{1,2})/), t = (h.match(/[#&]t=(\w+)/) || [])[1];
+  if (m && t && fnv(t) === 0xc979d2a4) d.setMonth(10, Math.min(30, Math.max(1, +m[1])));
   return d;
 })();
 const BDAY = new Date(TODAY.getFullYear(), 10, 11);
@@ -303,7 +330,27 @@ const blades = Array.from({ length: 18 }, (_, i) => ({ a:(i/17-.5)*2.6 + (rnd()-
 
 // le gros chiffre du compte à rebours, dessiné en caractères lui aussi
 const BIG = ISBDAY ? '11.11' : DAYS > 0 && DAYS <= 10 ? 'J-' + DAYS : '<3';
-let bigY = 0, bigSize = 100;
+let bigY = 0, bigSize = 100, heartR = 100, heartY = 200, finConf = false;
+// le grand cœur de la fin (la vraie équation d'un cœur, oui oui)
+function bigHeart(t) {
+  o.setTransform(1, 0, 0, 1, 0, 0); o.clearRect(0, 0, cols, rows);
+  o.setTransform(1 / cw, 0, 0, 1 / ch, 0, 0);
+  const beat = reduce ? 0 : Math.pow(Math.max(0, Math.sin(t * 2.5)), 8) * .07 + Math.pow(Math.max(0, Math.sin(t * 2.5 - .55)), 10) * .035;
+  const s = (reduce ? 1 : back(t / 1.8)) * (1 + beat), R = heartR / 16;
+  if (s <= 0) return;
+  o.save(); o.translate(W / 2, heartY); o.scale(s, s);
+  o.beginPath();
+  for (let k = 0; k <= 160; k++) {
+    const a = k / 160 * Math.PI * 2;
+    const x = 16 * Math.pow(Math.sin(a), 3), y = -(13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a));
+    k ? o.lineTo(x * R, y * R) : o.moveTo(x * R, y * R);
+  }
+  o.closePath();
+  const gr = o.createRadialGradient(-heartR * .32, -heartR * .3, heartR * .04, 0, 0, heartR * 1.25);
+  gr.addColorStop(0, '#ffd3dd'); gr.addColorStop(.3, '#f88aa4'); gr.addColorStop(.7, '#e3284f'); gr.addColorStop(1, '#a30f2b');
+  o.fillStyle = gr; o.fill();
+  o.restore();
+}
 function drawBig(alpha, reveal) {
   if (alpha <= 0) return;
   o.save();
@@ -337,6 +384,8 @@ function resize() {
   layoutName();
   bigSize = Math.min(W * .86 / (BIG.length * .6), H * .19);
   bigY = H * .25;
+  heartR = Math.min(W * .3, H * .17); heartY = H * .28;
+  document.documentElement.style.setProperty('--fy', Math.round(heartY + heartR * 1.2 + 12) + 'px');
   document.documentElement.style.setProperty('--nb', Math.round(bigY + bigSize * .42 + 8) + 'px');
 }
 const clamp = x => Math.min(Math.max(x, 0), 1);
@@ -640,7 +689,9 @@ function frame(now) {
   const time = (now - t0) / 1000;
   window.__bq = { time, opened, M0, NOVDAY, ISBDAY, dayKey };
   if (window.__bqPause) return;
-  if (opened) scene(time);
+  const fin = window.__bqFinale;
+  if (fin) bigHeart((now - fin) / 1000);
+  else if (opened) scene(time);
   else {
     o.setTransform(1, 0, 0, 1, 0, 0); o.clearRect(0, 0, cols, rows);
     o.setTransform(1 / cw, 0, 0, 1 / ch, 0, 0);
@@ -684,6 +735,13 @@ function frame(now) {
     }
   }
   // confettis
+  if (!fin) finConf = false;
+  else if (!finConf && !reduce) {
+    finConf = true;
+    const cs = ['#f06b8a', '#f6a3b6', '#e3242b', '#f1c53f', '#f5f0e6'];
+    for (let k = 0; k < 150; k++) confetti.push({ x: Math.random() * W, y: -Math.random() * H * .6, vx: (Math.random() - .5) * .6, vy: .8 + Math.random() * 1.4,
+      ch: '♥*+·♥'[(Math.random() * 5) | 0], col: cs[(Math.random() * 5) | 0], ph: Math.random() * 6 });
+  }
   if (!reduce && opened && !confettiDone && time > M0 + 4) {
     confettiDone = true;
     const cols8 = ['#f06b8a', '#f1c53f', '#cf3fcc', '#7cc44a', '#f3ab82', '#f5f0e6'];
@@ -710,7 +768,8 @@ function frame(now) {
   });
   // du pollen (et des cœurs) qui s'envolent
   if (!reduce && opened && time > 5 && Math.random() < .5 && pollen.length < 40) {
-    const f = flowers[(Math.random() * flowers.length) | 0], [x, y] = P(f.x, f.y);
+    const f = flowers[(Math.random() * flowers.length) | 0];
+    const [x, y] = fin ? [W / 2 + (Math.random() - .5) * heartR * 1.6, heartY + (Math.random() - .3) * heartR] : P(f.x, f.y);
     const h = Math.random() < .3;
     pollen.push({ x, y, h, col: h ? (Math.random() < .5 ? '#f06b8a' : '#e3242b') : '#f1c53f', vx:(Math.random() - .5) * .4, vy:-.3 - Math.random() * .5, life:1 });
   }
@@ -818,7 +877,7 @@ console.log('%cqu’est-ce que tu fais dans la console toi 👀♥', 'color:#f06
     return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b.slice(0, 12) }, await keyP, b.slice(12));
   };
   let meta = null, imgs = {};
-  const metaP = dec('m/order-v3.bin').then(b => (meta = JSON.parse(new TextDecoder().decode(b)))).catch(() => null);
+  const metaP = dec('m/data-v4.bin').then(b => (meta = JSON.parse(new TextDecoder().decode(b)))).catch(() => null);
   const photo = async n => imgs[n] || (imgs[n] = URL.createObjectURL(new Blob([await dec(`m/${n}.bin`)], { type: 'image/jpeg' })));
 
   const mem = document.getElementById('mem'), top = document.getElementById('memtop'), pola = document.getElementById('pola');
@@ -891,10 +950,8 @@ console.log('%cqu’est-ce que tu fais dans la console toi 👀♥', 'color:#f06
     later(() => { window.__bqPause = true; }, 2200);
     const order = meta.order;
     if (st.ISBDAY) {
-      // le 11 : toutes les photos, une par une
-      let k = 0;
-      const tour = () => { drawTrail(k % order.length + 1); show(order[k % order.length], `<span class="cmt">// toi &amp; moi · ${k % order.length + 1}/${order.length}</span><span class="hand">joyeux anniversaire ❤️</span>`, k ? 2.6 : 4.2); k++; later(tour, k === 1 ? 8000 : 6000); };
-      later(tour, 1200);
+      // le 11 : toutes les photos une par une… et après, le final
+      later(() => tour(0), 1200);
     } else {
       const d = st.NOVDAY >= 1 && st.NOVDAY <= order.length ? st.NOVDAY : (st.dayKey % order.length) + 1;
       const tail = st.NOVDAY >= 1 && st.NOVDAY < order.length ? 'demain, une autre surprise t’attend…' : st.NOVDAY === order.length ? 'demain c’est ton jour ♥' : 'toi & moi';
@@ -902,8 +959,70 @@ console.log('%cqu’est-ce que tu fais dans la console toi 👀♥', 'color:#f06
       if (st.NOVDAY === 1) later(() => askbtn.classList.add('on'), 9500);
     }
   }
+  function tour(k) {
+    const order = meta.order;
+    if (lb.classList.contains('on')) return later(() => tour(k), 400); // on attend si elle regarde une photo en grand
+    if (k >= order.length) return finale();
+    drawTrail(k + 1);
+    show(order[k], `<span class="cmt">// toi &amp; moi · ${k + 1}/${order.length}</span><span class="hand">on rembobine un peu… ♥</span>`, k ? 2.6 : 4.2);
+    later(() => tour(k + 1), k ? 6000 : 8000);
+  }
+  const fz = document.getElementById('finale'), fbig = document.getElementById('fbig'), flines = document.getElementById('flines'), again2 = document.getElementById('again2');
+  function finale() {
+    const F = meta.finale || { big: 'joyeux anniversaire mon amour', lines: ['celles-là elles faneront pas 😙😉❤️'] };
+    pola.classList.remove('on'); tiny.classList.remove('on'); top.classList.remove('on');
+    // on recule : toute la carte de nos souvenirs
+    later(() => {
+      const pts = meta.order.map(n => [meta.places[n - 1].lat, meta.places[n - 1].lon]);
+      top.innerHTML = `<span class="cmt">// nos ${meta.order.length} souvenirs</span><span class="hand">toi &amp; moi ♥</span>`;
+      top.classList.add('on');
+      map.flyToBounds(L.latLngBounds(pts), { paddingTopLeft: [40, 150], paddingBottomRight: [40, 70], duration: reduce ? 0 : 3.2, easeLinearity: .2 });
+    }, 900);
+    // puis la carte s'efface doucement…
+    later(() => {
+      top.classList.remove('on');
+      mem.classList.add('fading'); document.body.classList.add('finale');
+      window.__bqFinale = performance.now(); window.__bqPause = false;
+    }, reduce ? 600 : 6800);
+    // … et il reste juste ça
+    later(() => {
+      fbig.textContent = F.big;
+      flines.innerHTML = '';
+      const rows = F.lines.map(l => {
+        const r = document.createElement('div'); r.className = 'tl';
+        r.innerHTML = `<span class="ghost">&gt; ${l}&nbsp;</span><span class="typed"></span>`;
+        flines.appendChild(r); return { el: r.lastChild, text: l };
+      });
+      fz.hidden = false;
+      requestAnimationFrame(() => requestAnimationFrame(() => fz.classList.add('on')));
+      const cur = Object.assign(document.createElement('span'), { className: 'cur' });
+      let i = 0, c = 0;
+      const tick = () => {
+        if (i >= rows.length) return later(() => again2.classList.add('on'), 500);
+        const chars = Array.from(rows[i].text);
+        c++;
+        rows[i].el.innerHTML = '<span class="p">&gt;</span> ';
+        rows[i].el.append(chars.slice(0, c).join('')); rows[i].el.appendChild(cur);
+        if (c >= chars.length) { i++; c = 0; later(tick, i < rows.length ? 600 : 300); } else later(tick, 34 + Math.random() * 34);
+      };
+      later(tick, reduce ? 0 : 2000);
+    }, reduce ? 900 : 9300);
+  }
+  function hideFinale() {
+    fz.classList.remove('on'); again2.classList.remove('on'); fz.hidden = true;
+    mem.classList.remove('fading'); document.body.classList.remove('finale');
+    window.__bqFinale = 0;
+  }
+  again2.addEventListener('click', e => {
+    e.stopPropagation();
+    timers.forEach(clearTimeout); timers = [];
+    hideFinale();
+    later(() => { window.__bqPause = true; }, 2200);
+    later(() => tour(0), 600);
+  });
   function reset() {
     timers.forEach(clearTimeout); timers = [];
+    hideFinale();
     started = false; window.__bqPause = false;
     mem.classList.remove('on'); pola.classList.remove('on'); top.classList.remove('on'); tiny.classList.remove('on'); lb.classList.remove('on'); askbtn.classList.remove('on'); ask.classList.remove('on');
     setTimeout(() => { if (!started) mem.hidden = true; }, 600);
