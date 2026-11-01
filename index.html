@@ -46,6 +46,9 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .line.show{opacity:1;transform:none;filter:none}
 #line1{top:calc(env(safe-area-inset-top,0px) + 34px)}
 .emo{white-space:nowrap}
+.count{display:inline-block;margin-bottom:22px;padding:7px 14px;border:1px solid #3a2a2e;border-radius:999px;font:700 10px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:#f6a3b6}
+.count:empty{display:none}
+.count b{font-size:13px;color:#f3ecd9;margin-right:4px}
 .bday{display:block;font-style:italic;font-size:clamp(30px,8vw,52px);line-height:1;color:#f6a3b6;text-shadow:0 0 28px rgba(240,107,138,.45)}
 .sm{display:block;margin-top:12px;font-size:clamp(17px,4.2vw,26px);color:#e4dccb}
 .hint{display:block;margin-top:14px;font:700 9px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
@@ -68,10 +71,11 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 <canvas id="c" aria-label="Bouquet de lys, roses et tulipes dessiné en caractères ASCII"></canvas>
 <p class="line" id="line1">Pas de fleuriste ouvert à cette heure-ci…<br><em>alors je t'ai codé un bouquet.</em></p>
-<p class="line" id="line2"><span class="bday">Bon mois d'anniversaire <span class="emo">🎂✨</span></span><span class="sm">Novembre commence, ton mois commence…<br>et celles-là, elles ne faneront pas <span class="emo">😙😉❤️</span></span><small class="hint">touche l'écran</small></p>
+<p class="line" id="line2"><span class="bday" id="bday"></span><span class="sm" id="sm"></span><small class="hint">touche l'écran</small></p>
 <button id="regrow" type="button">↻ Revoir</button>
 <div class="intro" id="intro">
   <div>
+    <div class="count" id="count"></div>
     <p class="hi"><em>Sarah,</em></p>
     <p>j'ai un petit truc pour toi</p>
     <button id="open" type="button">Ouvre ♥</button>
@@ -100,8 +104,39 @@ const LILIES = [
 ];
 const BUDS = [[-0.14,-0.76,C.white],[0.14,-0.74,C.pink],[0.44,-0.56,C.yellow],[-0.45,-0.58,C.red]];
 
-let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-const TYPES = { 0:['rose','#d81c2c'], 3:['tulip','#f2843a'], 7:['rose','#ef8fb0'], 8:['tulip','#f6d23a'], 9:['rose','#a30f22'], 4:['tulip','#d64a9a'] };
+// ---- which day is it? (preview another day with #nov5, #nov11, …) ----
+const TODAY = (() => {
+  const d = new Date(), m = location.hash.match(/^#nov(\d{1,2})$/);
+  if (m) { d.setMonth(10, Math.min(30, Math.max(1, +m[1]))); }
+  return d;
+})();
+const BDAY = new Date(TODAY.getFullYear(), 10, 11);
+const DAYS = Math.round((BDAY - new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate())) / 864e5);
+const NOVDAY = TODAY.getMonth() === 10 ? TODAY.getDate() : 0;
+const ISBDAY = DAYS === 0;
+
+// one bouquet per day, a different mood each time
+const THEMES = [
+  null, // 1 Nov: the original mix
+  { t:['rose','rose','lily'], p:['#ef8fb0','#f5f0e6','#f7c6d4','#e05a8a'] },          // roses roses & blanches
+  { t:['tulip','tulip','tulip','lily'], p:['#f2843a','#f6d23a','#e3242b','#f3ab82'] }, // tulipes coucher de soleil
+  { t:['lily','lily','rose'], p:['#f5f0e6','#c9b6f2','#9d7fe0','#efe3ff'] },          // blanc & lavande
+  { t:['rose','lily'], p:['#d81c2c','#f5f0e6','#a30f22'] },                           // classique rouge & blanc
+  { t:['tulip','tulip','rose'], p:['#f7c6d4','#fbe3a0','#c9b6f2','#bfe6c8','#f5f0e6'] }, // pastel
+  { t:['lily','lily','tulip'], p:['#cf3fcc','#e9a526','#f4cb2e','#a52a78'] },         // magenta & or
+  { t:['rose','tulip','lily'], p:['#7a5cf0','#b48cf5','#5d3fd3','#f5f0e6'] },         // violets
+  { t:['lily','tulip','rose'], p:['#f4cb2e','#f5f0e6','#ffe27a','#f2b33a'] },         // soleil
+  { t:['rose','rose','tulip'], p:['#a30f22','#ef8fb0','#d81c2c','#f7c6d4'] },         // pourpre & rose
+  { t:['lily','rose','tulip'], p:['#e3242b','#f5f0e6','#f4cb2e','#cf3fcc','#f3ab82','#ef8fb0','#7a5cf0','#f2843a'] } // le jour J
+];
+const dayKey = TODAY.getFullYear() * 400 + TODAY.getMonth() * 32 + TODAY.getDate();
+const THEME = NOVDAY >= 1 && NOVDAY <= 11 ? THEMES[NOVDAY - 1] : THEMES[1 + dayKey % 10];
+
+let seed = NOVDAY === 1 ? 11 : 11 + dayKey % 9973; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const pick = a => a[(rnd() * a.length) | 0];
+const TYPES = THEME ? Object.fromEntries(LILIES.map((_, i) => [i, [pick(THEME.t), pick(THEME.p)]]))
+  : { 0:['rose','#d81c2c'], 3:['tulip','#f2843a'], 7:['rose','#ef8fb0'], 8:['tulip','#f6d23a'], 9:['rose','#a30f22'], 4:['tulip','#d64a9a'] };
+if (THEME) BUDS.forEach(b => { b[2] = pick(THEME.p); });
 const flowers = LILIES.map((f, i) => ({
   x:f[0], y:f[1], r:f[2], tilt:f[4], spin:f[5], view:(rnd()-.5)*1.2, i,
   type: TYPES[i] ? TYPES[i][0] : 'lily', col: TYPES[i] ? TYPES[i][1] : f[3],
@@ -467,7 +502,7 @@ function frame(now) {
   if (!reduce && opened && !confettiDone && time > M0 + 4) {
     confettiDone = true;
     const cols8 = ['#f06b8a', '#f1c53f', '#cf3fcc', '#7cc44a', '#f3ab82', '#f5f0e6'];
-    for (let k = 0; k < 90; k++) confetti.push({ x: Math.random() * W, y: -Math.random() * H * .4, vx: (Math.random() - .5) * .8, vy: 1.2 + Math.random() * 1.8,
+    for (let k = 0; k < (ISBDAY ? 220 : 90); k++) confetti.push({ x: Math.random() * W, y: -Math.random() * H * .4, vx: (Math.random() - .5) * .8, vy: 1.2 + Math.random() * 1.8,
       ch: '*+x·o♥'[(Math.random() * 6) | 0], col: cols8[(Math.random() * 6) | 0], ph: Math.random() * 6 });
   }
   confetti = confetti.filter(cf => {
@@ -506,6 +541,22 @@ function frame(now) {
   ctx.globalAlpha = 1;
 }
 
+const E = t => `<span class="emo">${t}</span>`;
+const bdayEl = document.getElementById('bday'), smEl = document.getElementById('sm'), countEl = document.getElementById('count');
+const NOFADE = `et celles-là, elles ne faneront pas ${E('😙😉❤️')}`;
+if (ISBDAY) {
+  bdayEl.innerHTML = `Joyeux anniversaire ${E('🎂🎉')}`;
+  smEl.innerHTML = `C'est ton jour aujourd'hui…<br>${NOFADE}`;
+  countEl.innerHTML = `<b>11.11</b> c'est le grand jour`;
+  document.title = 'Joyeux anniversaire Sarah ♥';
+} else if (DAYS > 0 && DAYS <= 10) {
+  bdayEl.innerHTML = NOVDAY === 1 ? `Bon mois d'anniversaire ${E('🎂✨')}` : DAYS === 1 ? `C'est demain ${E('🎂')}` : `Plus que ${DAYS} jours ${E('🎂')}`;
+  smEl.innerHTML = (NOVDAY === 1 ? `Novembre commence, ton mois commence…<br>` : DAYS === 1 ? `Demain, c'est ton anniversaire…<br>` : `avant ton anniversaire. Demain, un autre bouquet t'attend ${E('🌷')}<br>`) + NOFADE;
+  countEl.innerHTML = `<b>J-${DAYS}</b> ton bouquet du jour`;
+} else {
+  bdayEl.innerHTML = `Pour toi ${E('♥')}`;
+  smEl.innerHTML = `Celles-là, elles ne faneront pas ${E('😙😉❤️')}`;
+}
 const line1 = document.getElementById('line1'), line2 = document.getElementById('line2'), rg = document.getElementById('regrow'), intro = document.getElementById('intro');
 const regrow = () => { t0 = performance.now(); pollen = []; confetti = []; confettiDone = false; };
 document.getElementById('open').addEventListener('click', () => { opened = true; regrow(); intro.classList.add('gone'); });
