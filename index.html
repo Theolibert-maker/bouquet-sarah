@@ -365,7 +365,7 @@ body.music .memtop{padding-left:58px;padding-right:58px}
 .tkd{margin:0;display:grid;gap:calc(var(--u) * 1.8)}
 .tkd div{display:grid;grid-template-columns:calc(var(--u) * 17) 1fr;align-items:baseline}
 .tkd dt{font:400 max(9px,calc(var(--u) * 3.1)) var(--mono);letter-spacing:.14em;text-transform:uppercase;color:#9a8e80}
-.tkd dd{margin:0;font:400 max(11px,calc(var(--u) * 4.2))/1.3 var(--mono);color:#2b2320}
+.tkd dd{margin:0;font:400 max(10.5px,calc(var(--u) * 4.2))/1.3 var(--mono);color:#2b2320}
 .tkv{margin-top:calc(var(--u) * 4);padding-top:calc(var(--u) * 3);border-top:1px solid #e4d9c7;font:400 max(9px,calc(var(--u) * 3.1))/1.4 var(--mono);color:#9a8e80}
 .tks{display:flex;align-items:center;justify-content:space-between;gap:calc(var(--u) * 4);padding:calc(var(--u) * 5) calc(var(--u) * 6.5);border-radius:0 0 14px 14px;background:#efe6d5;
   background-image:linear-gradient(90deg,#cbbfa9 50%,transparent 0);background-size:12px 2px;background-repeat:repeat-x;background-position:0 0;
@@ -583,7 +583,7 @@ const dec = async url => {
   const b = new Uint8Array(await (await fetch(url, { cache: 'no-cache' })).arrayBuffer());
   return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b.slice(0, 12) }, k, b.slice(12));
 };
-const dataP = dec('m/data-v8.bin').then(b => JSON.parse(new TextDecoder().decode(b))).catch(() => null);
+const dataP = dec('m/data-v9.bin').then(b => JSON.parse(new TextDecoder().decode(b))).catch(() => null);
 window.__bqShared = { dec, dataP };
 
 // ---- comment le bouquet est arrangé (ça change selon les jours) ----
@@ -1129,7 +1129,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   if (now - last < 30) return; last = now;
   const time = (now - t0) / 1000;
-  window.__bq = { time, opened, M0, NOVDAY, ISBDAY, dayKey };
+  window.__bq = { time, opened, M0, NOVDAY, ISBDAY, dayKey, REPLAY };
   if (window.__bqPause) return;
   const fin = window.__bqFinale;
   if (fin) bigHeart((now - fin) / 1000);
@@ -1936,7 +1936,7 @@ console.log('%cqu’est-ce que tu fais dans la console toi 👀♥', 'color:#f06
       if (st.NOVDAY >= 1 && st.NOVDAY <= 10) later(() => { tiny.classList.remove('on'); calbtn.classList.add('on'); }, 11000);
       const note = n => (meta.places[n - 1].note || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
       later(() => { drawTrail(d); show(order[d - 1], [`// jour ${d}/${order.length}`, note(order[d - 1]) || tail, tail], 4.5); }, 1200);
-      if (st.NOVDAY === 1) later(() => askbtn.classList.add('on'), 9500);
+      if (st.NOVDAY === 1 && !st.REPLAY) later(() => askbtn.classList.add('on'), 9500); // la question resto, une seule fois (elle a déjà répondu)
     }
   }
   function tour(k) {
