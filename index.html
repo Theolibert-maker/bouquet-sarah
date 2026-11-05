@@ -401,6 +401,8 @@ body.music .memtop{padding-left:58px;padding-right:58px}
 .hlink{white-space:nowrap;padding:6px 0;border:0;background:none;font:400 12px var(--mono);color:#7d7166;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .hmap{height:clamp(128px,26vh,240px);margin:2px 0 10px;border-radius:10px;overflow:hidden;background:#111}
 .hmap.hfin{height:clamp(110px,20vh,200px)}
+.hreset{align-self:center;flex:none;padding:4px 10px;border:0;background:none;font:400 11.5px var(--mono);color:var(--muted);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.hreset.sure{color:var(--rose)}
 .hmgrs{margin:0 0 8px;font:700 clamp(17px,5vw,21px)/1.2 var(--mono);letter-spacing:.06em;color:#2b2320;white-space:nowrap}
 .hmgrs small{font-size:.62em;letter-spacing:.14em;color:#9a8e80;margin-right:6px}
 .hgo{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px}
@@ -1983,7 +1985,18 @@ console.log('%cqu’est-ce que tu fais dans la console toi 👀♥', 'color:#f06
     const save = () => { try { localStorage.setItem(KEY, String(k)); } catch (e) {} };
     const wrap = el('div', 'hunt'), dots = el('div', 'hdots'), card = el('div', 'hcard');
     for (let i = 0; i < N; i++) dots.appendChild(el('i'));
-    wrap.append(dots, card); aStage.appendChild(wrap);
+    // recommencer : deux touches pour éviter un reset par erreur
+    const RST = '↺ recommencer le jeu de piste', rst = el('button', 'hreset', RST); rst.type = 'button';
+    let sureT = 0;
+    const unsure = () => { clearTimeout(sureT); rst.classList.remove('sure'); rst.textContent = RST; };
+    rst.addEventListener('click', () => {
+      if (!rst.classList.contains('sure')) { rst.classList.add('sure'); rst.textContent = 'sûr ? touche encore pour tout recommencer'; clearTimeout(sureT); sureT = setTimeout(unsure, 4000); return; }
+      unsure(); k = 0; save();
+      act.classList.remove('adone'); aMsg.innerHTML = ''; aTease.textContent = '';
+      show();
+    });
+    actStop.push(() => clearTimeout(sureT));
+    wrap.append(dots, card, rst); aStage.appendChild(wrap);
     const btn = (label, cls, f) => { const b = el('button', cls, label); b.type = 'button'; b.addEventListener('click', f); return b; };
     const icon = (cls, html = '') => L.divIcon({ className: '', html: `<div class="${cls}">${html}</div>`, iconSize: [0, 0] });
     let mp = null, me = null, here = null, watch = null, geoEl = null, goBtn = null, target = null, fitted = false, padR = 34;
@@ -2024,7 +2037,7 @@ console.log('%cqu’est-ce que tu fais dans la console toi 👀♥', 'color:#f06
     }
     const show = () => {
       [...dots.children].forEach((d, i) => { d.className = i < k - 1 || k > N ? 'ok' : i === k - 1 ? 'on' : ''; });
-      killMap(); geoEl = goBtn = target = null;
+      killMap(); geoEl = goBtn = target = null; rst.hidden = k === 0;
       card.classList.remove('in'); void card.offsetWidth; card.classList.add('in'); card.scrollTop = 0;
       if (k === 0) intro(); else if (k > N) fin(); else step(S[k - 1]);
     };
