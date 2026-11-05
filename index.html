@@ -382,8 +382,38 @@ body.music .memtop{padding-left:58px;padding-right:58px}
 .tkst{position:absolute;z-index:2;right:calc(var(--u) * 5);top:calc(var(--u) * 40);padding:3px 10px;border:2.5px solid #c2183f;border-radius:7px;background:rgba(247,241,229,.9);color:#c2183f;
   font:700 max(12px,calc(var(--u) * 4.4)) var(--mono);transform:rotate(-10deg);animation:stampin .45s cubic-bezier(.3,1.6,.4,1) backwards}
 .tkhint{margin-top:2px;animation:soft 2.2s ease-in-out infinite}
+/* le 12 : jeu de piste */
+.hunt{width:min(100%,390px);max-height:100%;min-height:0;display:flex;flex-direction:column;gap:12px}
+.hdots{display:flex;justify-content:center;gap:7px;flex:none}
+.hdots i{width:8px;height:8px;border-radius:50%;background:#3a2c31;transition:background .4s,transform .4s}
+.hdots i.on{background:var(--rose);transform:scale(1.3)}
+.hdots i.ok{background:var(--gold)}
+.hcard{position:relative;min-height:0;overflow-y:auto;padding:18px 18px 16px;border-radius:14px;background:#f7f1e5;color:#2b2320;box-shadow:0 20px 44px rgba(0,0,0,.5);transform:rotate(-.8deg)}
+.hcard.in{animation:hin .6s cubic-bezier(.2,.9,.25,1.15)}
+@keyframes hin{from{opacity:0;transform:translateY(18px) rotate(-3deg)}}
+.hcard.no{animation:hno .4s}
+@keyframes hno{25%{translate:-7px 0}50%{translate:6px 0}75%{translate:-3px 0}}
+.hmeta{margin:0 0 8px;font:700 10px/1.4 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:#c2183f}
+.hr{margin:0 0 12px;font:400 clamp(19px,5.3vw,22px)/1.3 var(--hand);color:#2b2320}
+.hr.sm{font-size:clamp(17px,4.7vw,20px)}
+.hr.big{margin-bottom:8px;font-size:clamp(28px,8vw,34px);line-height:1.05;color:#c2183f}
+.hform{display:flex;gap:8px}
+.hform input{flex:1;min-width:0;padding:10px 12px;border:1.5px solid #d8ccb8;border-radius:9px;background:#fffdf8;font:400 16px var(--mono);color:#2b2320;outline:none;-webkit-appearance:none;appearance:none}
+.hform input:focus{border-color:#c2183f}
+.hbtn{display:block;margin:4px auto 0;padding:11px 18px;border:0;border-radius:9px;background:#2b2320;color:#f7f1e5;font:700 13px var(--mono);cursor:pointer}
+.hform .hbtn{margin:0;flex:none}
+.hfb{min-height:1.25em;margin:8px 0 0;font:400 19px/1.2 var(--hand);color:#c2183f}
+.hrow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:4px}
+.hlink{white-space:nowrap;padding:6px 0;border:0;background:none;font:400 12px var(--mono);color:#7d7166;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.hhint{margin:2px 0 0;font:400 19px/1.25 var(--hand);color:#7d7166}
+.hmap{height:clamp(96px,17vh,160px);margin:2px 0 12px;border-radius:10px;overflow:hidden;background:#111}
+.hpin{display:flex;align-items:center;gap:5px;white-space:nowrap;transform:translate(-7px,-50%)}
+.hpin b{width:14px;height:14px;flex:none;border-radius:50%;background:var(--pink);box-shadow:0 0 0 3px rgba(240,107,138,.35)}
+.hpin.g b{background:var(--gold);box-shadow:0 0 0 3px rgba(241,197,63,.35)}
+.hpin span{padding:2px 7px;border-radius:6px;background:rgba(10,7,8,.85);font:700 11px var(--mono);color:#f7f1e5}
+.resume{margin-top:12px;padding:6px 10px;border:0;background:none;font:400 13px var(--mono);color:var(--rose);text-decoration:underline;text-underline-offset:4px;cursor:pointer}
 @media (prefers-reduced-motion: reduce){
-  .act,.amsg,.atease,.rpola,.tile,.sw,.qpola,.sts,.sts img,.stn,.stt,.stsub,.tk{transition:none}.tkm::after{animation:none}
+  .act,.amsg,.atease,.rpola,.tile,.sw,.qpola,.sts,.sts img,.stn,.stt,.stsub,.tk{transition:none}.tkm::after,.hcard.in,.hcard.no{animation:none}
   .booth.print .strip{animation:none;transform:none}.wpol,.fheart.pop,.hcount.bump{animation:none}
 }
 .fh{position:fixed;z-index:15;pointer-events:none;font-size:26px;color:var(--pink);text-shadow:0 0 14px rgba(240,107,138,.6);animation:fh 1.6s ease-out forwards}
@@ -506,6 +536,7 @@ body.music .memtop{padding-left:58px;padding-right:58px}
   <p class="hi hand">Sarah,</p>
   <p class="say"><span class="tl"><span class="ghost" id="sayg">j'ai un petit truc pour toi&nbsp;</span><span class="typed" id="say"></span></span></p>
   <button class="key" id="open" type="button">ouvre<i>♥</i></button>
+  <button class="resume" id="resume" type="button" hidden>↪ reprendre le jeu de piste</button>
   <div class="cal" id="cal">
     <p class="calh"><span id="calL">// ton calendrier</span><b id="calCount"></b></p>
     <div class="grid" id="grid"></div>
@@ -583,7 +614,7 @@ const dec = async url => {
   const b = new Uint8Array(await (await fetch(url, { cache: 'no-cache' })).arrayBuffer());
   return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b.slice(0, 12) }, k, b.slice(12));
 };
-const dataP = dec('m/data-v9.bin').then(b => JSON.parse(new TextDecoder().decode(b))).catch(() => null);
+const dataP = dec('m/data-v10.bin').then(b => JSON.parse(new TextDecoder().decode(b))).catch(() => null);
 window.__bqShared = { dec, dataP };
 
 // ---- comment le bouquet est arrangé (ça change selon les jours) ----
@@ -1274,6 +1305,12 @@ const regrow = () => {
 };
 const openBtn = document.getElementById('open'), sayEl = document.getElementById('say');
 openBtn.addEventListener('click', () => { startMusic(); opened = true; regrow(); intro.classList.add('gone'); caseDlg.classList.remove('on'); });
+// le 12 : si le jeu de piste est commencé, on y retourne direct (pas besoin de revoir le bouquet entre deux énigmes)
+if (NOVDAY === 12) {
+  let hs = 0; try { hs = +(localStorage.getItem('bq-hunt') || 0); } catch (e) {}
+  const rb = document.getElementById('resume');
+  if (hs >= 1) { rb.hidden = false; rb.addEventListener('click', () => { opened = true; intro.classList.add('gone'); caseDlg.classList.remove('on'); window.__bqTapped = true; }); }
+}
 
 // ---- le calendrier de l'avent ----
 let DATA = null;
@@ -1355,7 +1392,7 @@ function untilMidnight() {
   return `${p(Math.floor(s / 3600))}:${p(Math.floor(s / 60) % 60)}:${p(s % 60)}`;
 }
 function tickNext() {
-  if (CALDAY >= 11) nextEl.innerHTML = CALDAY === 11 ? 'toutes les cases sont ouvertes' : 'calendrier terminé ❤️';
+  if (CALDAY >= 11) nextEl.innerHTML = CALDAY === 11 ? 'toutes les cases sont ouvertes' : CALDAY === 12 ? 'case bonus aujourd’hui : touche « ouvre » 😏' : 'calendrier terminé ❤️';
   else nextEl.innerHTML = `${CALDAY === 10 ? 'la dernière case' : 'prochaine case'} dans <b>${untilMidnight()}</b>`;
 }
 // un petit message en bas
@@ -1910,7 +1947,72 @@ console.log('%cqu’est-ce que tu fais dans la console toi 👀♥', 'color:#f06
     stub.addEventListener('pointercancel', () => { if (!drag || torn) return; drag = false; stub.style.transition = ''; stub.style.transform = ''; });
   }
 
-  const FMT = { scratch: fScratch, quiz: fQuiz, booth: fBooth, hearts: fHearts, wall: fWall, puzzle: fPuzzle, swipe: fSwipe, stats: fStats, ticket: fTicket };
+  // le 12 : jeu de piste. une énigme = un endroit ; on avance en trouvant la réponse sur place (gardé sur son téléphone)
+  async function fHunt(D) {
+    const S = D.steps || [], N = S.length, KEY = 'bq-hunt';
+    let k = 0; try { k = Math.max(0, Math.min(N + 1, +(localStorage.getItem(KEY) || 0))); } catch (e) {}
+    const save = () => { try { localStorage.setItem(KEY, String(k)); } catch (e) {} };
+    const wrap = el('div', 'hunt'), dots = el('div', 'hdots'), card = el('div', 'hcard');
+    for (let i = 0; i < N; i++) dots.appendChild(el('i'));
+    wrap.append(dots, card); aStage.appendChild(wrap);
+    const norm = v => String(v || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+    const btn = (label, cls, f) => { const b = el('button', cls, label); b.type = 'button'; b.addEventListener('click', f); return b; };
+    const show = () => {
+      [...dots.children].forEach((d, i) => { d.className = i < k - 1 || k > N ? 'ok' : i === k - 1 ? 'on' : ''; });
+      card.classList.remove('in', 'no'); void card.offsetWidth; card.classList.add('in'); card.scrollTop = 0;
+      if (k === 0) intro(); else if (k > N) fin(); else step(S[k - 1]);
+    };
+    const next = () => { k++; save(); show(); };
+    function intro() {
+      card.innerHTML = `<p class="hmeta">${txt(D.when || '')}</p><p class="hr">${dg(txt(D.intro))}</p>`;
+      card.appendChild(btn('c’est parti →', 'hbtn', next));
+    }
+    function step(x) {
+      card.innerHTML = `<p class="hmeta">étape ${k}/${N}${x.t ? ' · ' + txt(x.t) : ''}</p><p class="hr">${dg(txt(x.r))}</p>`;
+      if (x.photo) { card.appendChild(btn(txt(x.photo), 'hbtn', () => win(x))); return; }
+      const f = el('form', 'hform'), inp = el('input'), fb = el('p', 'hfb'), row = el('div', 'hrow');
+      inp.type = 'text'; inp.placeholder = 'ta réponse'; inp.autocomplete = 'off'; inp.spellcheck = false;
+      inp.setAttribute('autocapitalize', 'off'); inp.setAttribute('autocorrect', 'off'); inp.setAttribute('enterkeyhint', 'done');
+      const ok = el('button', 'hbtn', 'ok'); ok.type = 'submit'; f.append(inp, ok);
+      const skip = btn('passer cette étape', 'hlink', () => win(x, true)); skip.hidden = true;
+      const hint = btn('💡 un indice', 'hlink', () => { hint.replaceWith(el('p', 'hhint', dg(txt(x.h)))); skip.hidden = false; });
+      let tries = 0;
+      f.addEventListener('submit', e => {
+        e.preventDefault();
+        const v = norm(inp.value); if (!v) return;
+        if ((x.a || []).some(a => v.includes(norm(a)))) { inp.blur(); return win(x); }
+        tries++; fb.textContent = ['nope 😏', 'presque… ou pas', 'toujours pas 😂', 'demande-moi un indice 😙'][Math.min(tries - 1, 3)];
+        card.classList.remove('in', 'no'); void card.offsetWidth; card.classList.add('no');
+        if (tries >= 3) skip.hidden = false;
+      });
+      row.append(hint, skip); card.append(f, fb, row);
+    }
+    function win(x, skipped) {
+      card.innerHTML = `<p class="hmeta">${skipped ? 'étape passée 😏' : '✓ bien joué'}</p><p class="hr">${dg(txt(x.ok))}</p>`;
+      card.appendChild(btn(k < N ? 'étape suivante →' : 'la dernière étape →', 'hbtn', next));
+      if (!skipped) burst(card, 12);
+      card.classList.remove('in'); void card.offsetWidth; card.classList.add('in');
+    }
+    function fin() {
+      const F = D.final || {};
+      card.innerHTML = `<p class="hmeta">${txt(F.meta || 'dernière étape')}</p><p class="hr big">${dg(txt(F.title))}</p>`;
+      if (F.pins && window.L) {
+        const m = el('div', 'hmap'); card.appendChild(m);
+        requestAnimationFrame(() => {
+          const mp = L.map(m, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false, boxZoom: false, keyboard: false });
+          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(mp);
+          F.pins.forEach((q, i) => L.marker(q.ll, { interactive: false, icon: L.divIcon({ className: '', html: `<div class="hpin${i ? ' g' : ''}"><b></b><span>${txt(q.n)}</span></div>`, iconSize: [0, 0] }) }).addTo(mp));
+          mp.fitBounds(F.pins.map(q => q.ll), { paddingTopLeft: [24, 24], paddingBottomRight: [110, 24] });
+          actStop.push(() => { try { mp.remove(); } catch (e) {} });
+        });
+      }
+      card.appendChild(el('p', 'hr sm', dg(txt(F.text))));
+      burst(card, 14); actDone(D);
+    }
+    show();
+  }
+
+  const FMT = { scratch: fScratch, quiz: fQuiz, booth: fBooth, hearts: fHearts, wall: fWall, puzzle: fPuzzle, swipe: fSwipe, stats: fStats, ticket: fTicket, hunt: fHunt };
   async function start(st) {
     started = true;
     if (st.NOVDAY >= 1 && st.NOVDAY <= 11) try { localStorage.setItem('bq-o-' + st.NOVDAY, '1'); } catch (e) {}
