@@ -626,7 +626,7 @@ const dec = async url => {
   const b = new Uint8Array(await (await fetch(url, { cache: 'no-cache' })).arrayBuffer());
   return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b.slice(0, 12) }, k, b.slice(12));
 };
-const dataP = dec('m/data-v11.bin').then(b => JSON.parse(new TextDecoder().decode(b))).catch(() => null);
+const dataP = dec('m/data-v12.bin').then(b => JSON.parse(new TextDecoder().decode(b))).catch(() => null);
 window.__bqShared = { dec, dataP };
 
 // ---- comment le bouquet est arrangé (ça change selon les jours) ----
@@ -1959,7 +1959,7 @@ console.log('%cqu’est-ce que tu fais dans la console toi 👀♥', 'color:#f06
     stub.addEventListener('pointercancel', () => { if (!drag || torn) return; drag = false; stub.style.transition = ''; stub.style.transform = ''; });
   }
 
-  // le 12 : jeu de piste en coordonnées MGRS (comme à l'armée). un point sur la carte, on y va, « j'y suis », on passe au suivant.
+  // le 12 : jeu de piste en coordonnées MGRS. un point sur la carte, on y va, « j'y suis », on passe au suivant.
   // sa progression est gardée sur son téléphone.
   const utm31 = (lat, lon) => {
     const a = 6378137, f = 1 / 298.257223563, k0 = .9996, e2 = f * (2 - f), ep = e2 / (1 - e2), r = Math.PI / 180;
